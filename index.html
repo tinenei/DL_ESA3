@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8" />
+    <title>Deep Learning 3: LSTM LM Abgabe</title>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-2.30.0.min.js"></script>
+
+    <script defer src="index.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<h2>Deep Learning 3: Language Model mit LSTM</h2>
+<h2>Aufgabenstellung</h2>
+<p>
+Erstellen Sie ein Language Models (LM) zur Wortvorhersage. Trainieren Sie dazu als Modell ein Long Short-Term Memory (LSTM) Netzwerk auf der Basis der Daten (siehe den Punkt „Daten“ unten) zur Wortvorhersage (Next Word Prediction). Mittels des trainierten LSTM Language-Models kann autoregressiv ein Text generiert werden, in dem das jeweils vorhergesagte Wort an den vorhandenen Text angehängt wird.
+</p><p>
+Modell und Optimierung:  Nutzen Sie für Ihr Modell die folgende Netzwerkarchitektur und Parametern für den Lernalgorithmus:
+</p>
+<ul><li>Stacked LSTM: 2 hidden Layer (in sich rekursiv) mit je 100 LSTM Units (Sie können auch mit anderen/größeren Architekturen experimentieren).</li>
+    <li>Softmax Output mit der Dimension des Dictionaries.</li>
+<li>Als Loss nutzen Sie Cross-Entropy.</li>
+<li>Lernrate und Optimizer: Adam mit Lernrate(Learning Rate)=0.01 oder 0.001 und Batch-Size=32 (Sie können auch mit anderen experimentieren).</li>
+<li>Anzahl der Trainings-Epochen (Epochs): Ausprobieren, dazu den Loss beobachten (Sie können dazu den Tensorflow (TF) Visor nutzen).</li>
+</li>
+</ul>
+<h3>Interaktion:</h3>
+
+I1) Der Nutzer kann einen Text (Prompt) eingeben. Dieser sollte nur aus vollständigen, durch Leerzeichen getrennten Wörtern (Tokens) bestehen. Er kann dann jederzeit (am Ende eines vollständig eingegebenen Wortes) den Button „Vorhersage“ betätigen und erhält eine Darstellung der wahrscheinlichsten nun folgenden Wörter mit deren Wahrscheinlichkeiten. Er kann eines dieser Wörter auswählen, sodass es an den Text angehängt wird. Daraufhin beginnt automatisch eine neue Wortvorhersage.
+</p><p>
+I2) Der Nutzer kann mittels des „Weiter“ Buttons das wahrscheinlichste vorhergesagte Wort annehmen. Diese wird an den bisher eingegebenen Text angehängt, darauf beginnt automatisch eine neue Wortvorhersage. Der Nutzer kann also über wiederholtes Betätigen des „Weiter“ Buttons einen Text generieren lassen.
+</p><p>
+I3) Der Nutzer kann über einen „Auto“ Button automatisch bis zu 10 Wörter vorhersagen lassen. Diese automatische Vorhersage kann mittels eines „Stopp“ Buttons unterbrochen werden.
+</p><p>
+I4) Über ein „Reset“ Button werden der eingegebene Text und das Netzwerk zurückgesetzt.
+</p>
+
+<textarea id="prompt" placeholder="Text eingeben..."></textarea>
+
+<div class="row">
+    <button id="predict">Vorhersage</button>
+    <button id="next">Weiter</button>
+    <button id="auto">Auto</button>
+    <button id="stop">Stopp</button>
+    <button id="reset">Reset</button>
+</div>
+<div id="status"></div>
+<div class="box">
+    <strong>Top-Vorhersagen:</strong>
+    <div id="output">...</div>
+</div>
+
+<h3>Architektur</h3>
+    <p>
+        Das Modell nutzt ein Vokabular von 20.000 Tokens, das aus einem Korpus von 150.000 Textzeilen generiert wurde. Die finale Ausgabe erfolgt über eine dichte Softmax-Schicht, die eine Wahrscheinlichkeitsverteilung über mögliche nächste Wörter berechnet.
+</p><p>
+Die Eingabesequenzen bestehen aus jeweils 20 Tokens. Diese werden zunächst durch einen Embedding-Layer in Vektoren mit 64 Dimensionen transformiert, wodurch semantische Beziehungen zwischen Wörtern erfasst werden können.
+</p><p>
+Im Anschluss folgen zwei rekurrente LSTM-Schichten mit jeweils 200 Einheiten. Während die erste Schicht die vollständige Sequenz weitergibt (return_sequences=True), reduziert die zweite Schicht die Information auf den letzten Hidden State, um eine kompakte Repräsentation zu erzeugen. Experimente mit zusätzlichen Schichten zeigten keinen signifikanten Gewinn bei den Genauigkeiten, führten jedoch zu längeren Trainingszeiten. Eine Erhöhung der Anzahl an Units hingegen wirkte sich positiv auf die Modellleistung aus.
+</p><p>
+Zur Regularisierung wurden sowohl ein Dropout von 0,2 als auch ein recurrent Dropout von 0,1 in beiden LSTM-Schichten eingesetzt, um Overfitting entgegenzuwirken.
+</p><p>
+Das Training erfolgte mit dem Adam-Optimierer bei einer Lernrate von 0,001 sowie unter Verwendung der kategorischen Kreuzentropie als Loss-Funktion, da sich diese Kombination als stabil für LSTM-basierte Architekturen erwiesen hat. Die Batch-Größe betrug 128, und das Modell wurde über maximal 10 Epochen trainiert. Die tatsächliche Anzahl der Epochen wurde durch Early Stopping bestimmt.
+</p><p>
+Für die Implementierung des Trainings und des Tests kamen Python-Skripte zum Einsatz, wodurch das trainierte Modell gespeichert, evaluiert und später in eine Webanwendung integriert werden konnte.
+    </p>
+
+<h3>Rekonstruktion der Trainingsdaten</h3>
+<p>Das trainierte LSTM-Sprachmodell speichert keine vollständigen Trainingssätze, es lernt Sprachmuster und statistische Zusammenhänge. Dieser finden sich in den Modellgewichten repräsentiert. Dadurch wird eine Rekonstruktion der ursprünglichen Trainingsdaten nicht möglich.
+</p>
+<p>Sehr markante oder häufig vorkommende Formulierungen können jedoch teilweise oder sogar wörtlich wiedergeben werden, das kann passieren, wenn der Trainingsdatensatz klein ist oder das Modell zum Overfitting neigt. Aufgrund des Datenschutzrisikos sollten die Trainingsdaten daher keine personenbezogenen oder andere sensible Informationen enthalten. Bei einem relativ kleinen Vokabular ist diese Risiko relativ gering.
+Das zeigt sich beispielsweise bei der Eingabe des Wortes "Herr", die wahrscheinlichsten Varianten sind hier settembrini (13.98%), permaneder (6.73%), gruenlich (6.28%), albin (4.67%), kesselmeyer (3.64%). </p>
+<h3>Evaluation</h3>
+
+<div class="box">
+    <ul>
+        <li>k=1: <span id="k1">-</span></li>
+        <li>k=5: <span id="k5">-</span></li>
+        <li>k=10: <span id="k10">-</span></li>
+        <li>k=20: <span id="k20">-</span></li>
+    </ul>
+
+    <div id="plotly-chart"></div>
+</div>
+
+<div class="box">
+    <h2>Diskussion</h2>
+    <p>Grundlage Gutenberg Datensatz, vorverarbeitet, kleinschreibung, Satzzeichen entfernt</p>
+    <p>Wortschatz</p>
+    <p>relativ hohe Rechenzeit zum Training des Modells (13 Stunden), darum ist dieses Modell nicht vergleichbar mit mächtigen Systemen,
+        es kann aber aufgezeigt werden wie die grundlegende Funktionsweise ist.
+    Zur Weiterentwicklung könnte ein Transformer-Modell mit Self-Attention Mechanismus umgesetzt werden.
+    </p>
+
+    <p>
+        Die Evaluation des Modells anhand der Top-k-Accuracy zeigt, dass das korrekte nächste Wort in etwa 10 % der Fälle als wahrscheinlichste Vorhersage (Top-1) ausgegeben wird.
+        Wird die Anzahl der berücksichtigten Vorhersagen erhöht, steigt die Trefferquote kontinuierlich auf ca. 26 % (Top-5), 35 % (Top-10), 46 % (Top-20) und 71 % (Top-100).
+
+        Hier wird deutlich, dass das Modell das korrekte Wort häufig nicht als beste, jedoch als eine der wahrscheinlichsten Vorhersagen einstuft.
+        Für Anwendungen wie Wortvorschläge oder Autovervollständigung sind daher insbesondere die Top-5- und Top-10-Ergebnisse von praktischer Relevanz.
+
+    </p>
+
+
+    <h2>Dokumentation</h2>
+    <p>In dieser Lösung wurden folgende Technologien eingesetzt, um ein LSTM-basiertes Sprachmodell zu entwickeln, zu trainieren und im Browser nutzbar zu machen.
+</p>
+
+<ul>
+    <li>
+        <b>TensorFlow / Keras:</b> Wird zur Konstruktion, zum Training und zur Speicherung des neuronalen Netzes verwendet. Eingesetzt werden unter anderem LSTM-Schichten, Embedding-Layer, der Adam-Optimierer sowie EarlyStopping zur Vermeidung von Overfitting.
+    </li>
+    <li>
+        <b>TensorFlow.js:</b> Dient der Konvertierung des trainierten Keras-Modells in ein Format, das direkt im Webbrowser ausgeführt werden kann.
+    </li>
+    <li>
+        <b>NumPy:</b> Unterstützt die effiziente Verarbeitung und Strukturierung der Trainings- und Evaluationsdaten in Form von Arrays und Sequenzen.
+    </li>
+    <li>
+        <b>re (Regular Expressions):</b> Wird zur Textvorverarbeitung genutzt, insbesondere zur Trennung von Satzzeichen und zur Bereinigung des Textkorpus.
+    </li>
+    <li>
+        <b>HTML, CSS, JavaScript:</b> Bilden die Grundlage der Benutzeroberfläche. Sie ermöglichen die Eingabe von Text, die Darstellung von Vorhersagen sowie die Interaktion mit dem im Browser laufenden TensorFlow.js-Modell.
+    </li>
+</ul>
+
+<p>
+Das neuronale Netz basiert auf einer gestapelten LSTM-Architektur mit Dropout- und Recurrent-Dropout-Regularisierung, um Overfitting zu reduzieren. Die Trainingsdaten werden in Sequenzen fester Länge verarbeitet und das Modell mittels EarlyStopping optimiert, um unnötige Trainingsphasen zu vermeiden.
+</p>
+
+<p>
+Nach dem Training wird das Modell sowohl im <code>.keras</code>-Format als auch für TensorFlow.js exportiert. Im Frontend wird durch Padding und die Begrenzung der Wortindizes sichergestellt, dass alle Eingaben kompatibel mit der Modellstruktur bleiben. Zusätzlich werden im Testskript die Top-k-Accuracy zur Leistungsbewertung berechnet.
+</p>
+
+<ul>
+    <li>
+        <b>TensorFlow Documentation</b><br>
+        <a href="https://www.tensorflow.org/" target="_blank">
+            https://www.tensorflow.org/
+        </a>
+    </li>
+
+    <li>
+        <b>Keras Documentation</b><br>
+        <a href="https://keras.io/" target="_blank">
+            https://keras.io/
+        </a>
+    </li>
+
+    <li>
+        <b>TensorFlow.js Documentation</b><br>
+        <a href="https://www.tensorflow.org/js" target="_blank">
+            https://www.tensorflow.org/js
+        </a>
+    </li>
+
+    <li>
+        <b>NumPy Documentation</b><br>
+        <a href="https://numpy.org/doc/" target="_blank">
+            https://numpy.org/doc/
+        </a>
+    </li>
+
+    <li>
+        <b>Plotly.js Documentation</b><br>
+        <a href="https://plotly.com/javascript/" target="_blank">
+            https://plotly.com/javascript/
+        </a>
+    </li>
+</ul>
+</div>
+
+</body>
+</html>
