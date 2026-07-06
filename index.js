@@ -101,7 +101,7 @@ async function loadTokenizer() {
 }
 
 // ======================
-// PREDICTION (🔥 FIXED)
+// PREDICTION
 // ======================
 async function predictNext(promptText, topK = 10) {
     const seq = textToSequence(promptText);
@@ -128,6 +128,22 @@ async function predictNext(promptText, topK = 10) {
         .slice(0, topK);
 
     return filtered;
+}
+
+function sampleFromPredictions(preds) {
+    // Summe der Wahrscheinlichkeiten
+    const total = preds.reduce((sum, p) => sum + p.prob, 0);
+
+    let r = Math.random() * total;
+
+    for (const p of preds) {
+        r -= p.prob;
+        if (r <= 0) {
+            return p;
+        }
+    }
+
+    return preds[preds.length - 1];
 }
 
 // ======================
@@ -171,11 +187,17 @@ document.getElementById("auto").onclick = async () => {
         if (!running) break;
 
         const prompt = getPrompt();
-        const preds = await predictNext(prompt, 1);
 
-        appendWord(preds[0].word);
+        // Top-10 holen
+        const preds = await predictNext(prompt, 10);
+
+        // Zufällig nach Wahrscheinlichkeit auswählen
+        const next = sampleFromPredictions(preds);
+
+        appendWord(next.word);
 
         await predictAndRender();
+
         await new Promise(r => setTimeout(r, 400));
     }
 };
