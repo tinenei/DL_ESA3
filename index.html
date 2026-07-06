@@ -12,9 +12,9 @@
 </head>
 
 <body>
-
 <h2>Deep Learning 3: Language Model mit LSTM</h2>
-<h2>Aufgabenstellung</h2>
+
+    <h2>Aufgabenstellung</h2>
 <p>
 Erstellen Sie ein Language Models (LM) zur Wortvorhersage. Trainieren Sie dazu als Modell ein Long Short-Term Memory (LSTM) Netzwerk auf der Basis der Daten (siehe den Punkt „Daten“ unten) zur Wortvorhersage (Next Word Prediction). Mittels des trainierten LSTM Language-Models kann autoregressiv ein Text generiert werden, in dem das jeweils vorhergesagte Wort an den vorhandenen Text angehängt wird.
 </p><p>
@@ -52,30 +52,27 @@ I4) Über ein „Reset“ Button werden der eingegebene Text und das Netzwerk zu
     <strong>Top-Vorhersagen:</strong>
     <div id="output">...</div>
 </div>
+<div class="box">
 
+<h2>1. Experimente und Fragestellung</h2>
 <h3>Architektur</h3>
     <p>
-        Das Modell nutzt ein Vokabular von 20.000 Tokens, das aus einem Korpus von 150.000 Textzeilen generiert wurde. Die finale Ausgabe erfolgt über eine dichte Softmax-Schicht, die eine Wahrscheinlichkeitsverteilung über mögliche nächste Wörter berechnet.
-</p><p>
-Die Eingabesequenzen bestehen aus jeweils 20 Tokens. Diese werden zunächst durch einen Embedding-Layer in Vektoren mit 64 Dimensionen transformiert, wodurch semantische Beziehungen zwischen Wörtern erfasst werden können.
-</p><p>
-Im Anschluss folgen zwei rekurrente LSTM-Schichten mit jeweils 200 Einheiten. Während die erste Schicht die vollständige Sequenz weitergibt (return_sequences=True), reduziert die zweite Schicht die Information auf den letzten Hidden State, um eine kompakte Repräsentation zu erzeugen. Experimente mit zusätzlichen Schichten zeigten keinen signifikanten Gewinn bei den Genauigkeiten, führten jedoch zu längeren Trainingszeiten. Eine Erhöhung der Anzahl an Units hingegen wirkte sich positiv auf die Modellleistung aus.
-</p><p>
-Zur Regularisierung wurden sowohl ein Dropout von 0,2 als auch ein recurrent Dropout von 0,1 in beiden LSTM-Schichten eingesetzt, um Overfitting entgegenzuwirken.
-</p><p>
-Das Training erfolgte mit dem Adam-Optimierer bei einer Lernrate von 0,001 sowie unter Verwendung der kategorischen Kreuzentropie als Loss-Funktion, da sich diese Kombination als stabil für LSTM-basierte Architekturen erwiesen hat. Die Batch-Größe betrug 128, und das Modell wurde über maximal 10 Epochen trainiert. Die tatsächliche Anzahl der Epochen wurde durch Early Stopping bestimmt.
-</p><p>
-Für die Implementierung des Trainings und des Tests kamen Python-Skripte zum Einsatz, wodurch das trainierte Modell gespeichert, evaluiert und später in eine Webanwendung integriert werden konnte.
+ Für das Sprachmodell wurden verschieden Architekturen getestet, u.a. die Anzahl der Hidden-Units, die Sequenzlänge sowie Dropout und Recurrent Dropout.
+        Die finale Architektur besteht aus einer Eingabesequenz von 20 Tokens, einem Embedding Layer mit 256 Dimensionen, zwei LSTM-Schichten mit jeweils 200 Hidden Units (anders als Aufgabenstellung) und einer Softmax-Ausgabeschicht für ein Vokabular von 10.000 Wörtern.
+        Es wurde mit dem Adam-Optimierer, Categorical Cross-Entropy, Batch-Größe von 128 und Early-Stopping trainiert. Basis war ein Korpus von 150.000 Textzeilen aus dem Gutenberg-Korpus.
+        </p>
+    <p>
+        Für die Implementierung des Trainings und des Tests kamen Python-Skripte zum Einsatz, wodurch das trainierte Modell gespeichert, evaluiert und später in eine Webanwendung integriert werden konnte.
     </p>
 
 <h3>Rekonstruktion der Trainingsdaten</h3>
-<p>Das trainierte LSTM-Sprachmodell speichert keine vollständigen Trainingssätze, es lernt Sprachmuster und statistische Zusammenhänge. Dieser finden sich in den Modellgewichten repräsentiert. Dadurch wird eine Rekonstruktion der ursprünglichen Trainingsdaten nicht möglich.
-</p>
-<p>Sehr markante oder häufig vorkommende Formulierungen können jedoch teilweise oder sogar wörtlich wiedergeben werden, das kann passieren, wenn der Trainingsdatensatz klein ist oder das Modell zum Overfitting neigt. Aufgrund des Datenschutzrisikos sollten die Trainingsdaten daher keine personenbezogenen oder andere sensible Informationen enthalten. Bei einem relativ kleinen Vokabular ist diese Risiko relativ gering.
-Das zeigt sich beispielsweise bei der Eingabe des Wortes "Herr", die wahrscheinlichsten Varianten sind hier settembrini (13.98%), permaneder (6.73%), gruenlich (6.28%), albin (4.67%), kesselmeyer (3.64%). </p>
-<h3>Evaluation</h3>
+    <p>Die Trainingsdaten können nicht direkt rekonstruiert werden, das Modell speichert lediglich statistische Zusammenhänge. Häufige Formulierungen und somit auch persönliche Daten könnten
+    reproduziert werden. Daher sollte mit sensiblen und personenbezogenen Daten achtsam umgegangen werden. Bei der Eingabe "Herr" zeigt sich das Risiko.</p>
+</div>
+
 
 <div class="box">
+    <h2>2. Evaluation</h2>
     <ul>
         <li>k=1: <span id="k1">-</span></li>
         <li>k=5: <span id="k5">-</span></li>
@@ -84,56 +81,47 @@ Das zeigt sich beispielsweise bei der Eingabe des Wortes "Herr", die wahrscheinl
     </ul>
 
     <div id="plotly-chart"></div>
+<p><p>Die geringe Top-1 Accuracy ist aufgrund des großen Vokabulars erwartbar. Die deutlich höheren Top-k-Werte zeigen, dass das Modell sinnvolle Wortwahrscheinlichkeiten gelernt hat. Die Ergebnisse werden zusätzlich mit Plotly grafisch dargestellt.</p>
+Die Evaluation des Modells anhand der Top-k-Accuracy zeigt, dass das korrekte nächste Wort in etwa 10 % der Fälle als wahrscheinlichste Vorhersage (Top-1) ausgegeben wird.
+        Wird die Anzahl der berücksichtigten Vorhersagen erhöht, steigt die Trefferquote kontinuierlich auf ca. 26 % (Top-5), 35 % (Top-10), 46 % (Top-20) und 71 % (Top-100).
+</p><p>
+        Hier wird deutlich, dass das Modell das korrekte Wort häufig nicht als beste, jedoch als eine der wahrscheinlichsten Vorhersagen einstuft.
+        Für Anwendungen wie Wortvorschläge oder Autovervollständigung sind daher insbesondere die Top-5- und Top-10-Ergebnisse von praktischer Relevanz, was bei der Ausgabe Berücksichtigung findet.
+</p>
 </div>
 
 <div class="box">
-    <h2>Diskussion</h2>
-    <p>Grundlage Gutenberg Datensatz, vorverarbeitet, kleinschreibung, Satzzeichen entfernt</p>
-    <p>Wortschatz</p>
-    <p>relativ hohe Rechenzeit zum Training des Modells (13 Stunden), darum ist dieses Modell nicht vergleichbar mit mächtigen Systemen,
-        es kann aber aufgezeigt werden wie die grundlegende Funktionsweise ist.
-    Zur Weiterentwicklung könnte ein Transformer-Modell mit Self-Attention Mechanismus umgesetzt werden.
-    </p>
+    <h2>3. Diskussion</h2>
+    <p>Die Experimente zeigen, dass eine höhere Modellkomplexität nicht zwangsläufig bessere Ergebnisse liefert.
+        Die gewählte Architektur bietet einen guten Kompromiss zwischen Vorhersagequalität und Trainingszeit.
+        Außerdem wurde deutlich, dass Sprachmodelle keine Trainingsdaten direkt speichern, einzelne häufige Muster jedoch wiedergeben können.
+        Insgesamt konnte beobachtet werden, dass die Wahl geeigneter Hyperparameter einen großen Einfluss auf die Modellleistung haben. Darüber hinaus wurde deutlich,
+        dass Sprachmodelle keine Trainingsdaten direkt speichern, dennoch aber einzelne häufige Muster reproduzieren können. Dies zeigt die Bedeutung datenschutzfreundlicher Trainingsverfahren.
+        </p>
+    <p>Mit einer Rechenzeit von ca. 13 Stunden war das Training schon sehr aufwendig, die Ergebnisse des Modells sind natürlich nicht vergleichbar mit mächtigen Systemen.
+        Jedoch ist es gelungen, die grundlegende Funktionalität eines Sprachmodells zu demonstrieren. </p>
 
-    <p>
-        Die Evaluation des Modells anhand der Top-k-Accuracy zeigt, dass das korrekte nächste Wort in etwa 10 % der Fälle als wahrscheinlichste Vorhersage (Top-1) ausgegeben wird.
-        Wird die Anzahl der berücksichtigten Vorhersagen erhöht, steigt die Trefferquote kontinuierlich auf ca. 26 % (Top-5), 35 % (Top-10), 46 % (Top-20) und 71 % (Top-100).
-
-        Hier wird deutlich, dass das Modell das korrekte Wort häufig nicht als beste, jedoch als eine der wahrscheinlichsten Vorhersagen einstuft.
-        Für Anwendungen wie Wortvorschläge oder Autovervollständigung sind daher insbesondere die Top-5- und Top-10-Ergebnisse von praktischer Relevanz.
-
-    </p>
-
-
-    <h2>Dokumentation</h2>
-    <p>In dieser Lösung wurden folgende Technologien eingesetzt, um ein LSTM-basiertes Sprachmodell zu entwickeln, zu trainieren und im Browser nutzbar zu machen.
+    <h2>4. Dokumentation</h2>
+    <p>In dieser Lösung wurden folgende Technologien eingesetzt.
 </p>
 
 <ul>
     <li>
-        <b>TensorFlow / Keras:</b> Wird zur Konstruktion, zum Training und zur Speicherung des neuronalen Netzes verwendet. Eingesetzt werden unter anderem LSTM-Schichten, Embedding-Layer, der Adam-Optimierer sowie EarlyStopping zur Vermeidung von Overfitting.
+        <b>TensorFlow / Keras:</b> Konstruktion, Training und Speicherung des neuronalen Netzes
     </li>
     <li>
-        <b>TensorFlow.js:</b> Dient der Konvertierung des trainierten Keras-Modells in ein Format, das direkt im Webbrowser ausgeführt werden kann.
+        <b>TensorFlow.js:</b> Konvertierung des trainierten Keras-Modells in ein Format, das direkt im Webbrowser ausgeführt werden kann
     </li>
     <li>
-        <b>NumPy:</b> Unterstützt die effiziente Verarbeitung und Strukturierung der Trainings- und Evaluationsdaten in Form von Arrays und Sequenzen.
+        <b>NumPy:</b> unterstützt die effiziente Verarbeitung und Strukturierung der Trainings- und Evaluationsdaten in Form von Arrays und Sequenzen
     </li>
     <li>
-        <b>re (Regular Expressions):</b> Wird zur Textvorverarbeitung genutzt, insbesondere zur Trennung von Satzzeichen und zur Bereinigung des Textkorpus.
+        <b>re (Regular Expressions):</b>Textvorverarbeitung, insbesondere zur Trennung von Satzzeichen und zur Bereinigung des Textkorpus
     </li>
     <li>
-        <b>HTML, CSS, JavaScript:</b> Bilden die Grundlage der Benutzeroberfläche. Sie ermöglichen die Eingabe von Text, die Darstellung von Vorhersagen sowie die Interaktion mit dem im Browser laufenden TensorFlow.js-Modell.
+        <b>HTML, CSS, JavaScript:</b>Grundlage der Benutzeroberfläche, ermöglichen die Eingabe von Text, die Darstellung von Vorhersagen sowie die Interaktion mit dem im Browser laufenden TensorFlow.js-Modell
     </li>
 </ul>
-
-<p>
-Das neuronale Netz basiert auf einer gestapelten LSTM-Architektur mit Dropout- und Recurrent-Dropout-Regularisierung, um Overfitting zu reduzieren. Die Trainingsdaten werden in Sequenzen fester Länge verarbeitet und das Modell mittels EarlyStopping optimiert, um unnötige Trainingsphasen zu vermeiden.
-</p>
-
-<p>
-Nach dem Training wird das Modell sowohl im <code>.keras</code>-Format als auch für TensorFlow.js exportiert. Im Frontend wird durch Padding und die Begrenzung der Wortindizes sichergestellt, dass alle Eingaben kompatibel mit der Modellstruktur bleiben. Zusätzlich werden im Testskript die Top-k-Accuracy zur Leistungsbewertung berechnet.
-</p>
 
 <ul>
     <li>
