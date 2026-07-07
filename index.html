@@ -60,8 +60,21 @@ I4) Über ein „Reset“ Button werden der eingegebene Text und das Netzwerk zu
  Für das Sprachmodell wurden verschieden Architekturen getestet, u.a. die Anzahl der Hidden-Units, die Sequenzlänge sowie Dropout und Recurrent Dropout.
         Die finale Architektur besteht aus einer Eingabesequenz von 20 Tokens, einem Embedding Layer mit 256 Dimensionen, zwei LSTM-Schichten mit jeweils 200 Hidden Units (anders als Aufgabenstellung) und einer Softmax-Ausgabeschicht für ein Vokabular von 10.000 Wörtern.
         Es wurde mit dem Adam-Optimierer, Categorical Cross-Entropy, Batch-Größe von 128 und Early-Stopping trainiert. Basis war ein Korpus von 150.000 Textzeilen aus dem Gutenberg-Korpus.
-        </p>
-    <p>
+        </p><p><ul>
+    <li><strong>Sequenzlänge:</strong> 20 Tokens</li>
+    <li><strong>Vokabular:</strong> 20.000 häufigste Wörter (<code>&lt;OOV&gt;</code> für unbekannte Wörter)</li>
+    <li><strong>Embedding:</strong> 256 Dimensionen</li>
+    <li><strong>LSTM-Architektur:</strong> 2 LSTM-Schichten mit jeweils 200 Hidden Units</li>
+    <li><strong>Dropout:</strong> 0,2</li>
+    <li><strong>Recurrent Dropout:</strong> 0,1</li>
+    <li><strong>Optimierer:</strong> Adam (Lernrate 0,001)</li>
+    <li><strong>Loss-Funktion:</strong> Sparse Categorical Cross-Entropy</li>
+    <li><strong>Batch-Größe:</strong> 128</li>
+    <li><strong>Maximale Epochen:</strong> 10</li>
+    <li><strong>Validierungsanteil:</strong> 10 %</li>
+    <li><strong>Early Stopping:</strong> Abbruch nach 5 Epochen ohne Verbesserung des Validierungs-Loss, Wiederherstellung der besten Modellgewichte</li>
+    </ul>
+    </p>
         Für die Implementierung des Trainings und des Tests kamen Python-Skripte zum Einsatz, wodurch das trainierte Modell gespeichert, evaluiert und später in eine Webanwendung integriert werden konnte.
     </p>
 
